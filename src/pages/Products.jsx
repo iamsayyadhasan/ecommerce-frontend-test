@@ -2,24 +2,38 @@ import React, { useEffect, useState } from "react";
 import { Navbar, Footer } from "../components";
 import { useDispatch } from "react-redux";
 import { addCart } from "../redux/action";
-import { Link } from "react-router-dom"; 
-import "./Products.css"; 
+import { Link } from "react-router-dom";
+import "./Products.css";
 
 const Products = () => {
   const [products, setProducts] = useState([]);
   const dispatch = useDispatch();
 
   useEffect(() => {
-    fetch("https://fakestoreapi.com/products")
-      .then((res) => res.json())
-      .then((data) => {
-        const updated = data.map((p, index) => ({
-          ...p,
-          inStock: index % 2 === 0,
-          variants: ["Small", "Medium", "Large"]
-        }));
-        setProducts(updated);
-      });
+    let isMounted = true; // ✅ Safe mount flag
+
+    const fetchProducts = async () => {
+      try {
+        const res = await fetch("https://fakestoreapi.com/products");
+        const data = await res.json();
+        if (isMounted) {
+          const updated = data.map((p, index) => ({
+            ...p,
+            inStock: index % 2 === 0,
+            variants: ["Small", "Medium", "Large"],
+          }));
+          setProducts(updated);
+        }
+      } catch (error) {
+        console.error("Error fetching products:", error);
+      }
+    };
+
+    fetchProducts();
+
+    return () => {
+      isMounted = false; 
+    };
   }, []);
 
   return (
@@ -36,7 +50,7 @@ const Products = () => {
               <div
                 className="card h-100 border-0 shadow-sm rounded-4 overflow-hidden hover-card"
                 style={{
-                  transition: "transform 0.3s ease, box-shadow 0.3s ease"
+                  transition: "transform 0.3s ease, box-shadow 0.3s ease",
                 }}
                 onMouseEnter={(e) => {
                   e.currentTarget.style.transform = "translateY(-5px)";
@@ -49,7 +63,7 @@ const Products = () => {
                     "0 4px 12px rgba(0, 0, 0, 0.1)";
                 }}
               >
-               
+                {/* Product Image */}
                 <div
                   className="bg-light p-3 d-flex align-items-center justify-content-center"
                   style={{ height: "250px" }}
@@ -60,26 +74,28 @@ const Products = () => {
                     style={{
                       maxHeight: "100%",
                       maxWidth: "100%",
-                      objectFit: "contain"
+                      objectFit: "contain",
                     }}
                   />
                 </div>
 
-               
+                {/* Product Info */}
                 <div className="card-body d-flex flex-column">
                   <h6 className="card-title fw-semibold text-truncate">
                     {product.title}
                   </h6>
-                  <p className="text-primary fw-bold mb-2">${product.price}</p>
+                  <p className="text-primary fw-bold mb-2">
+                    ${product.price}
+                  </p>
 
-                 
+                  {/* Variants */}
                   <select className="form-select form-select-sm mb-3 rounded-pill border-0 shadow-sm">
                     {product.variants.map((v, i) => (
                       <option key={i}>{v}</option>
                     ))}
                   </select>
 
-                  
+                  {/* Buy Now Link */}
                   <Link
                     to={`/product/${product.id}`}
                     className="btn btn-dark w-100 rounded-pill mb-2"
@@ -87,7 +103,7 @@ const Products = () => {
                     Buy Now
                   </Link>
 
-                  
+                  {/* Stock Button */}
                   {product.inStock ? (
                     <button
                       className="btn btn-primary w-100 rounded-pill mt-auto"
