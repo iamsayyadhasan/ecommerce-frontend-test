@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import { Navbar, Footer } from "../components";
 import { useDispatch } from "react-redux";
 import { addCart } from "../redux/action";
@@ -8,15 +8,14 @@ import "./Products.css";
 const Products = () => {
   const [products, setProducts] = useState([]);
   const dispatch = useDispatch();
+  const isMounted = useRef(true); // <-- useRef to track mount status
 
   useEffect(() => {
-    let isMounted = true; // ✅ Safe mount flag
-
     const fetchProducts = async () => {
       try {
         const res = await fetch("https://fakestoreapi.com/products");
         const data = await res.json();
-        if (isMounted) {
+        if (isMounted.current) {
           const updated = data.map((p, index) => ({
             ...p,
             inStock: index % 2 === 0,
@@ -24,15 +23,15 @@ const Products = () => {
           }));
           setProducts(updated);
         }
-      } catch (error) {
-        console.error("Error fetching products:", error);
+      } catch (err) {
+        console.error("Error fetching products:", err);
       }
     };
 
     fetchProducts();
 
     return () => {
-      isMounted = false; 
+      isMounted.current = false; // <-- cleanup marks component as unmounted
     };
   }, []);
 
@@ -63,7 +62,6 @@ const Products = () => {
                     "0 4px 12px rgba(0, 0, 0, 0.1)";
                 }}
               >
-                {/* Product Image */}
                 <div
                   className="bg-light p-3 d-flex align-items-center justify-content-center"
                   style={{ height: "250px" }}
@@ -78,24 +76,18 @@ const Products = () => {
                     }}
                   />
                 </div>
-
-                {/* Product Info */}
                 <div className="card-body d-flex flex-column">
                   <h6 className="card-title fw-semibold text-truncate">
                     {product.title}
                   </h6>
-                  <p className="text-primary fw-bold mb-2">
-                    ${product.price}
-                  </p>
+                  <p className="text-primary fw-bold mb-2">${product.price}</p>
 
-                  {/* Variants */}
                   <select className="form-select form-select-sm mb-3 rounded-pill border-0 shadow-sm">
                     {product.variants.map((v, i) => (
                       <option key={i}>{v}</option>
                     ))}
                   </select>
 
-                  {/* Buy Now Link */}
                   <Link
                     to={`/product/${product.id}`}
                     className="btn btn-dark w-100 rounded-pill mb-2"
@@ -103,7 +95,6 @@ const Products = () => {
                     Buy Now
                   </Link>
 
-                  {/* Stock Button */}
                   {product.inStock ? (
                     <button
                       className="btn btn-primary w-100 rounded-pill mt-auto"
